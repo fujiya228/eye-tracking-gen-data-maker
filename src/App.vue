@@ -19,7 +19,17 @@
             <v-list-item-title> Generate </v-list-item-title>
           </v-list-item-content>
         </v-list-item>
+        <v-list-item link @click="reverseFlowData()">
+          <v-list-item-icon>
+            <v-icon>mdi-swap-vertical</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>Reverse</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+
         <v-divider></v-divider>
+
         <v-list-item link @click="addFlowData()">
           <v-list-item-icon>
             <v-icon>mdi-plus</v-icon>
@@ -325,6 +335,9 @@ export default {
           this.addTextData(this.flowData[i], text, size, alpha, deg);
         }
       }
+    },
+    reverseFlowData() {
+      this.flowData = this.flowData.reverse();
     },
     getRandomInt(max) {
       return Math.floor(Math.random() * Math.floor(max));
