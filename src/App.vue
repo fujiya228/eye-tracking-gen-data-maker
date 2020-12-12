@@ -46,7 +46,10 @@
           >
             <v-list-item-content>
               <v-list-item-content
-                >Target: {{ item.targetText }}</v-list-item-content
+                >Target: {{ item.targetText }}
+                {{ item.textData.slice(-1)[0].size }}-{{
+                  item.textData.slice(-1)[0].alpha
+                }}</v-list-item-content
               >
             </v-list-item-content>
             <v-list-item-icon>
@@ -126,7 +129,7 @@
                       ></v-text-field>
                     </v-col>
                   </v-row>
-                  <p class="subtitle-2">Size List</p>
+                  <p class="subtitle-2">Alpha List</p>
                   <v-row>
                     <v-col
                       v-for="(alpha, index) in alphaList"
@@ -138,6 +141,43 @@
                         type="number"
                         :label="index.toString()"
                         step="0.05"
+                        outlined
+                        hide-details="auto"
+                      ></v-text-field>
+                    </v-col>
+                  </v-row>
+                  <p class="subtitle-2">Target Character List</p>
+                  <v-row>
+                    <v-col
+                      v-for="(target, index) in targetCharacterList"
+                      :key="index"
+                      cols="1.5"
+                    >
+                      <v-text-field
+                        v-model="targetCharacterList[index]"
+                        type="text"
+                        :label="index.toString()"
+                        outlined
+                        hide-details="auto"
+                      ></v-text-field>
+                    </v-col>
+                  </v-row>
+                  <p class="subtitle-2">Flow Range</p>
+                  <v-row>
+                    <v-col cols="6">
+                      <v-text-field
+                        v-model.number="flowMin"
+                        type="number"
+                        label="Min"
+                        outlined
+                        hide-details="auto"
+                      ></v-text-field>
+                    </v-col>
+                    <v-col cols="6">
+                      <v-text-field
+                        v-model.number="flowMax"
+                        type="number"
+                        label="Max"
                         outlined
                         hide-details="auto"
                       ></v-text-field>
@@ -264,8 +304,22 @@ export default {
         value: 2.5,
       },
     },
+    SizeAlpha: [
+      [0, 0],
+      [0, 1],
+      [0, 2],
+      [1, 0],
+      [1, 1],
+      [1, 2],
+      [2, 0],
+      [2, 1],
+      [2, 2],
+    ],
     sizeList: [16, 32, 48],
     alphaList: [0.3, 0.6, 1],
+    targetCharacterList: ["A", "B", "D", "E", "F", "G", "H", "J", "M"],
+    flowMax: 8,
+    flowMin: 4,
     flowData: [],
   }),
   methods: {
@@ -320,33 +374,63 @@ export default {
       // データをランダム生成
       this.flowData = [];
       this.flowCount = 0;
-      let flowNum = Math.floor(Math.random() * 7) + 3;
+      this.targetCharacterList.sort(); // Generate時にソート
+      const flowNum = 9; // 実験条件そろえるので9で固定に
+      const randomTargets = this.shuffle([...this.targetCharacterList]); // targetの文字の順序をランダムに
+      const randomSizeAlpha = this.shuffle([...this.SizeAlpha]); // targetの文字のサイズ,α値の組み合わせをランダムに
       for (let i = 0; i < flowNum; i++) {
-        this.addFlowData(this.getRandomChar());
-        let textNum = Math.floor(Math.random() * 7) + 3;
+        this.addFlowData(randomTargets[i]); // targetの文字をセット
+        let textNum = this.getRandomInt(this.flowMin - 1, this.flowMax); // 文字の数は flowMin-1 以上 flowMax未満でランダムに（最後にtarget入れるので-1）
+        // target以外の文字の配列を作成
+        let nonTargetCharacterList = [];
+        for (let i = 0; i < 36; i++)
+          nonTargetCharacterList.push(i.toString(36).toUpperCase());
+        // targetを除去
+        nonTargetCharacterList.splice(parseInt(randomTargets[i], 36), 1);
+        // target以外のフロー作成
         for (let j = 0; j < textNum; j++) {
-          let text =
-            j === textNum - 1
-              ? this.flowData[i].targetText
-              : this.getRandomChar();
-          let size = this.getRandomInt(3);
-          let alpha = this.getRandomInt(3);
-          let deg = this.getRandomInt(360);
+          let text = this.getRandomChar(nonTargetCharacterList); // target以外の文字からランダムに
+          let size = this.getRandomInt(0, 3);
+          let alpha = this.getRandomInt(0, 3);
+          let deg = this.getRandomInt(0, 360);
           this.addTextData(this.flowData[i], text, size, alpha, deg);
         }
+        // 最後にtargetの文字をセット
+        this.addTextData(
+          this.flowData[i],
+          randomTargets[i],
+          randomSizeAlpha[i][0],
+          randomSizeAlpha[i][1],
+          this.getRandomInt(0, 360)
+        );
       }
     },
     reverseFlowData() {
       this.flowData = this.flowData.reverse();
     },
-    getRandomInt(max) {
-      return Math.floor(Math.random() * Math.floor(max));
+    getRandomInt(min, max) {
+      min = Math.ceil(min);
+      max = Math.floor(max);
+      return Math.floor(Math.random() * (max - min) + min);
     },
-    getRandomChar() {
-      return this.getRandomInt(36).toString(36).toUpperCase();
+    getRandomChar(list = null) {
+      if (list == null)
+        return this.getRandomInt(0, 36).toString(36).toUpperCase();
+      return list[this.getRandomInt(0, list.length)];
     },
     deepCopy(data) {
       return JSON.parse(JSON.stringify(data));
+    },
+    shuffle(array) {
+      for (let i = array.length - 1; i >= 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    },
+    getArrayItemByIndex(array, index) {
+      if (index < 0) index = array.length + index;
+      return array[index];
     },
     clickLoad() {
       document.getElementById("load").click();
@@ -364,13 +448,16 @@ export default {
       });
     },
     initData(data) {
+      this.targetCharacterList = []; // targetのテキストを更新
       data.flowData.forEach((flowItem, flowIndex) => {
         flowItem.id = flowIndex;
         flowItem.textCount = flowItem.textData.length;
         flowItem.textData.forEach((textItem, textIndex) => {
           textItem.id = textIndex;
         });
+        this.targetCharacterList.push(flowItem.textData.slice(-1)[0].text); // targetのテキストを更新
       });
+      this.targetCharacterList.sort(); // targetのテキストを更新
       this.selectedScreen.type = "file";
       this.selectedScreen.id = -1;
       this.flowCount = data.flowNum;
@@ -413,5 +500,6 @@ export default {
       link.remove();
     },
   },
+  created() {},
 };
 </script>
