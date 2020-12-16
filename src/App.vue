@@ -383,7 +383,7 @@ export default {
         let textNum = this.getRandomInt(this.flowMin - 1, this.flowMax); // 文字の数は flowMin-1 以上 flowMax未満でランダムに（最後にtarget入れるので-1）
         // target以外の文字の配列を作成
         let nonTargetCharacterList = [];
-        for (let i = 0; i < 36; i++)
+        for (let i = 10; i < 36; i++)
           nonTargetCharacterList.push(i.toString(36).toUpperCase());
         // targetを除去
         nonTargetCharacterList.splice(parseInt(randomTargets[i], 36), 1);
